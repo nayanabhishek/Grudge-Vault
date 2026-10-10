@@ -1,0 +1,14 @@
+{
+  "name": "@grudge-vault/game-engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "types": "./dist/index.d.ts",
+  "exports": { ".": "./dist/index.js" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "corepack pnpm run build && node --test test/projection.test.mjs test/game.test.mjs"
+  },
+  "devDependencies": { "typescript": "~5.7.3" }
+}
