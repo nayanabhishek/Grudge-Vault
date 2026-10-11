@@ -26,6 +26,8 @@ For local development, set `SQLITE_PATH=./data/grudge-vault.sqlite` and `WEB_ORI
 
 Attach a persistent disk to the single API web service at mount path `/var/data`, then set `SQLITE_PATH=/var/data/grudge-vault.sqlite`. Do not store production data in the repository, working directory, or another ephemeral path. A Render disk requires a plan that supports persistent disks and prevents scaling this service to multiple instances; see the [Render persistent disk docs](https://render.com/docs/disks).
 
+For temporary free-tier testing only, production can explicitly opt in to ephemeral SQLite by setting both `ALLOW_EPHEMERAL_SQLITE=true` and `SQLITE_PATH=/tmp/grudge-vault.sqlite`. The opt-in value is case-sensitive and must be exactly `true`; with it enabled, startup rejects every database path outside `/tmp`. SQLite migrations and transaction safeguards still apply, but `/tmp` is ephemeral: rooms and matches can disappear after a restart, redeploy, or free-tier spin-down. Do not use this mode for matches or data you need to retain. Without the opt-in, production continues to require a database path beneath `/var/data`.
+
 Set `WEB_ORIGIN` to the deployed frontend origin. On startup, the API applies pending migrations on the mounted disk before it serves requests. Do not run migrations in the build phase, which cannot access the mounted disk.
 
 ## Backup and restore

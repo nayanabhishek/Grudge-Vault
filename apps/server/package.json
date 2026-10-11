@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "migrate": "node scripts/migrate.mjs",
     "backup": "node scripts/backup.mjs",
-    "test": "corepack pnpm run build && node --test test/server.test.mjs test/sqlite-transaction.test.mjs test/sqlite-startup.test.mjs"
+    "test": "npm run build && node --test test/server.test.mjs test/sqlite-transaction.test.mjs test/sqlite-startup.test.mjs test/sqlite-paths.test.mjs"
   },
   "dependencies": {
     "@grudge-vault/game-engine": "workspace:*",

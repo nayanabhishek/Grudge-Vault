@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { createHash } from "node:crypto";
 import { mkdirSync } from "node:fs";
-import { dirname, resolve, sep } from "node:path";
+import { dirname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   abandonMatch,
@@ -78,11 +78,27 @@ export function resolveSqlitePath(databasePath = process.env.SQLITE_PATH ?? "./d
   return resolve(SERVER_ROOT, databasePath);
 }
 
-export function createSqlitePool(databasePath = process.env.SQLITE_PATH ?? "./data/grudge-vault.sqlite", migrationsDirectory = resolve(SERVER_ROOT, "migrations")): SqlitePool {
-  const absolutePath = resolveSqlitePath(databasePath);
-  if (process.env.NODE_ENV === "production" && !absolutePath.startsWith(resolve("/var/data") + sep)) {
+function isBeneathMount(databasePath: string, mountPath: string): boolean {
+  const relativePath = relative(mountPath, databasePath);
+  return relativePath !== "" && relativePath !== ".." && !relativePath.startsWith(`..${sep}`) && !isAbsolute(relativePath);
+}
+
+export function validateProductionSqlitePath(absolutePath: string): void {
+  if (process.env.NODE_ENV !== "production") return;
+  if (process.env.ALLOW_EPHEMERAL_SQLITE === "true") {
+    if (!isBeneathMount(absolutePath, resolve("/tmp"))) {
+      throw new Error("When ALLOW_EPHEMERAL_SQLITE=true, production SQLITE_PATH must be beneath /tmp.");
+    }
+    return;
+  }
+  if (!isBeneathMount(absolutePath, resolve("/var/data"))) {
     throw new Error("Production SQLite must be stored beneath the Render persistent disk mount /var/data (set SQLITE_PATH). ");
   }
+}
+
+export function createSqlitePool(databasePath = process.env.SQLITE_PATH ?? "./data/grudge-vault.sqlite", migrationsDirectory = resolve(SERVER_ROOT, "migrations")): SqlitePool {
+  const absolutePath = resolveSqlitePath(databasePath);
+  validateProductionSqlitePath(absolutePath);
   if (absolutePath === ":memory:" && process.env.NODE_ENV === "production") throw new Error("Production SQLite must use a persistent file path, not :memory:.");
   const parent = absolutePath === ":memory:" ? null : dirname(absolutePath);
   if (parent) mkdirSync(parent, { recursive: true });
